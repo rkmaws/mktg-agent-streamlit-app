@@ -1,7 +1,8 @@
 import streamlit as st
+import sys
+sys.path.append('./')
 from src.ui import demo_ui
 from src.utils import cognito_auth_helper
-import sys
 import logging
 
 # Configure logging
@@ -80,7 +81,7 @@ def main():
         page_title="AWS Agentic AI for Marketing",
         page_icon="👋",
         layout="wide",
-        initial_sidebar_state="collapsed",
+        # initial_sidebar_state="collapsed",
     )
 
     st.markdown("""
@@ -144,7 +145,17 @@ def main():
         st.text(f"Welcome,\n{authenticator.get_email()}")
         st.button("Logout", "logout_btn", on_click=logout)
 
-    content_section()
+    # content_section()
+    st.header("AWS Agentic AI Demo powered by Amazon Bedrock Agents.", divider="rainbow")
+    st.markdown(
+        """
+        This demo is built using Streamlit, an open-source app framework built specifically for
+        Machine Learning and Data Science projects. The demo uses Amazon Bedrock, a fully managed generative AI service on AWS.
+        The demo uses Foundation models from Anthropic, Stable Diffusion and Amazon.
+        
+        **👈 Select a demo from the sidebar**
+        """
+    )
 
 if __name__ == "__main__":
     main()
