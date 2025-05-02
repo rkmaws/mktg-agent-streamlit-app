@@ -1,5 +1,5 @@
-# Author: Gary A. Stafford
-# Modified: 2024-04-14
+# Author: Gary A. Stafford, Ranjith Krishnamoorthy
+# Modified: 2025-05-01
 # AWS Code Reference: https://docs.aws.amazon.com/bedrock/latest/userguide/model-parameters-anthropic-claude-messages.html
 
 """
@@ -142,32 +142,30 @@ Creative Design description : {img_analysis}'''
 
             with st.spinner(text="Analyzing..."):
                 current_time1 = datetime.datetime.now()
-                response = bedrockHelper.build_request(prompt, file_paths, profile)
+                response,error = bedrockHelper.build_request(prompt, file_paths, profile)
                 current_time2 = datetime.datetime.now()
-                st.text_area(
-                    label="Analysis:",
-                    value=response["content"][0]["text"],
-                    height=800,
-                )
-                img_prompt = response["content"][0]["text"]
-                # logger.info(img_prompt)
-                utils.pickle_dump(img_prompt, "img_prompt.pkl")
-                logger.info("Pickled json")
-                st.session_state.analysis_time = (
-                    current_time2 - current_time1
-                ).total_seconds()
+                if response:
+                    st.text_area(
+                        label="Analysis:",
+                        value=response["content"][0]["text"],
+                        height=800,
+                    )
+                    img_prompt = response["content"][0]["text"]
+                    # logger.info(img_prompt)
+                    utils.pickle_dump(img_prompt, "img_prompt.pkl")
+                    logger.info("Pickled json")
+                    st.session_state.analysis_time = (
+                        current_time2 - current_time1
+                    ).total_seconds()
 
-                # st.markdown(
-                #     f"Analysis time: {current_time2 - current_time1}",
-                #     unsafe_allow_html=True,
-                # )
-                st.session_state.input_tokens = response["usage"]["input_tokens"]
-                st.session_state.output_tokens = response["usage"]["output_tokens"]
-    
-    st.markdown(
-        "<small style='color: #888888'> Gary A. Stafford, Ranjith Krishnamoorthy 2024</small>",
-        unsafe_allow_html=True,
-    )
+                    # st.markdown(
+                    #     f"Analysis time: {current_time2 - current_time1}",
+                    #     unsafe_allow_html=True,
+                    # )
+                    st.session_state.input_tokens = response["usage"]["input_tokens"]
+                    st.session_state.output_tokens = response["usage"]["output_tokens"]
+                else:
+                    st.error(error)
 
     with st.sidebar:
         st.markdown("### Inference Parameters")
@@ -175,12 +173,7 @@ Creative Design description : {img_analysis}'''
 
         st.session_state.model_id = st.selectbox(
             "model_id",
-            options=[
-                "anthropic.claude-3-5-sonnet-20240620-v1:0",
-                "anthropic.claude-3-sonnet-20240229-v1:0",
-                "anthropic.claude-3-haiku-20240307-v1:0",
-                "anthropic.claude-3-opus-20240229-v1:0",
-            ],
+            options=bedrockHelper.get_filtered_models(profile, input_mode='TEXT', output_mode='TEXT'),
         )
 
         st.session_state.max_tokens = st.slider(

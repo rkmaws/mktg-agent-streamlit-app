@@ -16,6 +16,25 @@ class ImageError(Exception):
     def __init__(self, message):
         self.message = message
 
+def get_available_models(profile="default"):
+    session = boto3.Session(profile_name=profile)
+    client = session.client('bedrock')
+    try:
+        models = client.list_foundation_models()
+    except ClientError as e:
+        logger.error(e.response)
+        return None
+    return models["modelSummaries"]
+
+def get_filtered_models(profile="default", input_mode= 'TEXT', output_mode='IMAGE'):
+    models = get_available_models(profile)
+    filtered_models = []
+    for model in models:
+        if input_mode in model["inputModalities"] and output_mode in model["outputModalities"]:
+            filtered_models.append(model["modelId"])
+    logger.info(f"Available models: {filtered_models}")
+    return filtered_models
+
 def get_supported_img_size(inp_width, aspect_ratio, model_id):
     stability_ratios = (1,1.28, 1.46,1.75,2.4)
     stability_sizes = (
@@ -327,11 +346,19 @@ def run_multi_modal_prompt(
     
     logger.info("Sending request to bedrock")
 
-    response = bedrock_runtime.invoke_model(body=body, modelId=model_id)
-    
-    response_body = json.loads(response.get("body").read())
-    logger.info("Returning bedock response")
-    return response_body
+    try:
+        response = bedrock_runtime.invoke_model(body=body, modelId=model_id)
+    except ClientError as e:
+        logger.error(e)
+        response = None
+        error = e.response["Error"]
+    if response:
+        response_body = json.loads(response.get("body").read())
+        logger.info("Returning bedock response")
+        return response_body, None
+    else:
+        logger.info("Returning error")
+        return None, error
 
 def build_request(prompt, file_paths, profile="default", mask_prompt = "", negative_prompt = "", task_type = "", image_height=1024, image_width=1024):
     """

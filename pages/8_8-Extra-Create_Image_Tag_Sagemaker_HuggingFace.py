@@ -1,5 +1,5 @@
-# Author: Gary A. Stafford
-# Modified: 2024-04-14
+# Author: Gary A. Stafford, Ranjith Krishnamoorthy
+# Modified: 2025-05-01
 # AWS Code Reference: https://docs.aws.amazon.com/bedrock/latest/userguide/model-parameters-anthropic-claude-messages.html
 
 """
@@ -186,11 +186,6 @@ def main(profile):
                     f"Analysis time: {st.session_state.analysis_time}",
                     unsafe_allow_html=True,
                 )
-    
-    st.markdown(
-        "<small style='color: #888888'> Gary A. Stafford, Ranjith Krishnamoorthy 2024</small>",
-        unsafe_allow_html=True,
-    )
 
     with st.sidebar:
         st.markdown("### Inference Parameters")

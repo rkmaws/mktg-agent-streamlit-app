@@ -1,5 +1,5 @@
-# Author: Gary A. Stafford
-# Modified: 2024-04-14
+# Author: Gary A. Stafford, Ranjith Krishnamoorthy
+# Modified: 2025-05-01
 # AWS Code Reference: https://docs.aws.amazon.com/bedrock/latest/userguide/model-parameters-anthropic-claude-messages.html
 
 """
@@ -208,68 +208,65 @@ def main(profile):
 
             with st.spinner(text="Analyzing..."):
                 current_time1 = datetime.datetime.now()
-                response = bedrockHelper.build_request(prompt, file_paths, profile,  mask_prompt, negative_prompt, st.session_state.task_type)
+                response, error = bedrockHelper.build_request(prompt, file_paths, profile,  mask_prompt, negative_prompt, st.session_state.task_type)
                 current_time2 = datetime.datetime.now()
-
-                                # Extract the image data
-                if "stability" in st.session_state["model_id"]:
-                    image_path = os.path.join(f"{assets_dir}/generated_images/", "generated_image_frm_seed.png")
-                    if "sd3" in st.session_state["model_id"]:
-                        base64_output_image = response["images"][0]
-                        image_data = base64.b64decode(base64_output_image)
-                        image = Image.open(BytesIO(image_data))
-                        image.save(image_path)
-                        finish_reason = response.get("finish_reasons")[0]
-                        print(finish_reason)
-                        if finish_reason:
-                            raise bedrockHelper.ImageError(f"Image generation error. Error code is {finish_reason}")
-                    else:
-                        base64_image = response.get("artifacts")[0].get("base64")
-                        base64_bytes = base64_image.encode('ascii')
-                        image_bytes = base64.b64decode(base64_bytes)
-                        finish_reason = response.get("artifacts")[0].get("finishReason")
-                        # Save the generated image to a local file
-                        with open(image_path, "wb") as file:
-                            file.write(image_bytes)
-                        if finish_reason == 'ERROR' or finish_reason == 'CONTENT_FILTERED':
-                            raise bedrockHelper.ImageError(f"Image generation error. Error code is {finish_reason}")
-
-                    # Display the generated image in Streamlit
-                    st.image(image_path)
-
-                else:
-                    images = response.get("images")
-                    for i, item in enumerate(images):
-                        base64_bytes = item.encode('ascii')
-                        image_bytes = base64.b64decode(base64_bytes)
-
-                        # Save the generated image to a local file
-                        image_path = os.path.join(f"{assets_dir}/generated_images/", f"generated_image_frm_seed{i}.png")
-                        with open(image_path, "wb") as file:
-                            file.write(image_bytes)
+                if response:
+                    # Extract the image data
+                    if "stability" in st.session_state["model_id"]:
+                        image_path = os.path.join(f"{assets_dir}/generated_images/", "generated_image_frm_seed.png")
+                        if "sd3" in st.session_state["model_id"]:
+                            base64_output_image = response["images"][0]
+                            image_data = base64.b64decode(base64_output_image)
+                            image = Image.open(BytesIO(image_data))
+                            image.save(image_path)
+                            finish_reason = response.get("finish_reasons")[0]
+                            print(finish_reason)
+                            if finish_reason:
+                                raise bedrockHelper.ImageError(f"Image generation error. Error code is {finish_reason}")
+                        else:
+                            base64_image = response.get("artifacts")[0].get("base64")
+                            base64_bytes = base64_image.encode('ascii')
+                            image_bytes = base64.b64decode(base64_bytes)
+                            finish_reason = response.get("artifacts")[0].get("finishReason")
+                            # Save the generated image to a local file
+                            with open(image_path, "wb") as file:
+                                file.write(image_bytes)
+                            if finish_reason == 'ERROR' or finish_reason == 'CONTENT_FILTERED':
+                                raise bedrockHelper.ImageError(f"Image generation error. Error code is {finish_reason}")
 
                         # Display the generated image in Streamlit
                         st.image(image_path)
 
-                        finish_reason = response.get("error")
-                        if finish_reason is not None:
-                            raise bedrockHelper.ImageError(f"Image generation error. Error code is {finish_reason}")
-                
-                st.session_state.analysis_time = (
-                    current_time2 - current_time1
-                ).total_seconds()
+                    else:
+                        images = response.get("images")
+                        for i, item in enumerate(images):
+                            base64_bytes = item.encode('ascii')
+                            image_bytes = base64.b64decode(base64_bytes)
 
-                st.markdown(
-                    f"Analysis time: {current_time2 - current_time1}",
-                    unsafe_allow_html=True,
-                )
-                # st.session_state.input_tokens = response["usage"]["input_tokens"]
-                # st.session_state.output_tokens = response["usage"]["output_tokens"]
-    
-    st.markdown(
-        "<small style='color: #888888'> Gary A. Stafford, Ranjith Krishnamoorthy 2024</small>",
-        unsafe_allow_html=True,
-    )
+                            # Save the generated image to a local file
+                            image_path = os.path.join(f"{assets_dir}/generated_images/", f"generated_image_frm_seed{i}.png")
+                            with open(image_path, "wb") as file:
+                                file.write(image_bytes)
+
+                            # Display the generated image in Streamlit
+                            st.image(image_path)
+
+                            finish_reason = response.get("error")
+                            if finish_reason is not None:
+                                raise bedrockHelper.ImageError(f"Image generation error. Error code is {finish_reason}")
+                    
+                    st.session_state.analysis_time = (
+                        current_time2 - current_time1
+                    ).total_seconds()
+
+                    st.markdown(
+                        f"Analysis time: {current_time2 - current_time1}",
+                        unsafe_allow_html=True,
+                    )
+                    # st.session_state.input_tokens = response["usage"]["input_tokens"]
+                    # st.session_state.output_tokens = response["usage"]["output_tokens"]
+                else:
+                    st.error(error)
 
     with st.sidebar:
         st.markdown("### Inference Parameters")
@@ -277,11 +274,7 @@ def main(profile):
 
         st.session_state.model_id = st.selectbox(
             "model_id",
-            options=[
-                "stability.sd3-large-v1:0",
-                "stability.stable-diffusion-xl-v1",
-                "amazon.titan-image-generator-v2:0"
-            ],
+            options=bedrockHelper.get_filtered_models(profile, input_mode='TEXT', output_mode='IMAGE'),
         )
         st.session_state.task_type = st.selectbox(
             "task_type",

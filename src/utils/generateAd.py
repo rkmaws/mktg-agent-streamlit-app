@@ -6,7 +6,7 @@ from PIL import Image, ImageDraw, ImageFont
 
 def generate_ad_image(headline, ad_copy, cta, image, brand = None):
     # change below as needed
-    path="../../assets/"
+    path="assets"
     # ad_image_in = f"{path}/generated_images/generated_image.png"
     ad_image_in = image
     ad_image_out = f"{path}/generated_ads/generated_ad.png"

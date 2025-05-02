@@ -1,5 +1,5 @@
-# Author: Gary A. Stafford
-# Modified: 2024-04-14
+# Author: Gary A. Stafford, Ranjith Krishnamoorthy
+# Modified: 2025-05-01
 # AWS Code Reference: https://docs.aws.amazon.com/bedrock/latest/userguide/model-parameters-anthropic-claude-messages.html
 
 """
@@ -211,23 +211,21 @@ Put the email between <email> tags.'''
             st.markdown("---")
             with st.spinner(text="Analyzing..."):
                 current_time1 = datetime.datetime.now()
-                response = bedrockHelper.build_request(f"{st.session_state.prompt}", file_paths, profile)
+                response,error = bedrockHelper.build_request(f"{st.session_state.prompt}", file_paths, profile)
                 current_time2 = datetime.datetime.now()
-                st.text_area(
-                    label="Analysis:",
-                    value=response["content"][0]["text"],
-                    height=800,
-                )
-                st.session_state.analysis_time = (
-                    current_time2 - current_time1
-                ).total_seconds()
-                st.session_state.input_tokens = response["usage"]["input_tokens"]
-                st.session_state.output_tokens = response["usage"]["output_tokens"]
-    
-    st.markdown(
-        "<small style='color: #888888'> Gary A. Stafford, Ranjith Krishnamoorthy 2024</small>",
-        unsafe_allow_html=True,
-    )
+                if response:
+                    st.text_area(
+                        label="Analysis:",
+                        value=response["content"][0]["text"],
+                        height=800,
+                    )
+                    st.session_state.analysis_time = (
+                        current_time2 - current_time1
+                    ).total_seconds()
+                    st.session_state.input_tokens = response["usage"]["input_tokens"]
+                    st.session_state.output_tokens = response["usage"]["output_tokens"]
+                else:
+                    st.error(error)
 
     with st.sidebar:
         st.markdown("### Inference Parameters")
